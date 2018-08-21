@@ -8,6 +8,8 @@ import android.util.LayoutDirection;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.leixing.lib.R;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -81,7 +83,11 @@ public class FlowLayout extends ViewGroup {
         int lineHeight = 0;
 
         int childCount = getChildCount();
-        int innerWidth = sizeWidth - getPaddingLeft() - getPaddingRight();
+        int paddingLeft = getPaddingLeft();
+        int paddingRight = getPaddingRight();
+        int paddingTop = getPaddingTop();
+        int paddingBottom = getPaddingBottom();
+        int innerWidth = sizeWidth - paddingLeft - paddingRight;
 
         boolean isFirstViewOfLine = true;
         boolean isFirstLine = true;
@@ -124,9 +130,10 @@ public class FlowLayout extends ViewGroup {
             }
         }
 
-        // TODO: 2018/7/31 是否要结合上面的情况计算？提前判断
-        int measuredWidth = modeWidth == MeasureSpec.EXACTLY ? sizeWidth : contentWidth + getPaddingLeft() + getPaddingRight();
-        int measuredHeight = modeHeight == MeasureSpec.EXACTLY ? sizeHeight : contentHeight + getPaddingTop() + getPaddingBottom();
+        int width = contentWidth + paddingLeft + paddingRight;
+        int height = contentHeight + paddingTop + paddingBottom;
+        int measuredWidth = modeWidth == MeasureSpec.EXACTLY ? sizeWidth : width;
+        int measuredHeight = modeHeight == MeasureSpec.EXACTLY ? sizeHeight : height;
         setMeasuredDimension(measuredWidth, measuredHeight);
     }
 
@@ -145,6 +152,8 @@ public class FlowLayout extends ViewGroup {
         int paddingLeft = getPaddingLeft();
         int paddingRight = getPaddingRight();
         int paddingTop = getPaddingTop();
+        int innerWidth = width - paddingLeft - paddingRight;
+
         boolean isFirstViewOfLine = true;
         boolean isFirstLine = true;
 
@@ -153,16 +162,18 @@ public class FlowLayout extends ViewGroup {
             if (child.getVisibility() == View.GONE) {
                 continue;
             }
+            MarginLayoutParams layoutParams = (MarginLayoutParams) child.getLayoutParams();
 
-            int childWidth = child.getMeasuredWidth() + (isFirstViewOfLine ? 0 : mViewSpacing);
-            int childHeight = child.getMeasuredHeight() + (isFirstLine ? 0 : mLineSpacing);
-            MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+            int childWidth = child.getMeasuredWidth() + layoutParams.leftMargin + layoutParams.rightMargin
+                    + (isFirstViewOfLine ? 0 : mViewSpacing);
+            int childHeight = child.getMeasuredHeight() + layoutParams.topMargin + layoutParams.bottomMargin
+                    + (isFirstLine ? 0 : mLineSpacing);
 
-            if (childWidth + usedLineWidth + lp.leftMargin + lp.rightMargin + mViewSpacing <= width - paddingLeft - paddingRight) {
+            if (childWidth + usedLineWidth <= innerWidth) {
                 //不足一行
                 isFirstViewOfLine = false;
-                usedLineWidth += childWidth + lp.leftMargin + lp.rightMargin;
-                lineHeight = Math.max(lineHeight, childHeight + lp.topMargin + lp.bottomMargin);
+                usedLineWidth += childWidth;
+                lineHeight = Math.max(lineHeight, childHeight);
                 lineViews.add(child);
             } else {
                 //超过一行
@@ -171,11 +182,10 @@ public class FlowLayout extends ViewGroup {
                 mLineHeight.add(lineHeight);
                 mLineWidth.add(usedLineWidth);
                 mAllViews.add(lineViews);
-//                lineWidth = childWidth + lp.leftMargin + lp.rightMargin;
-                usedLineWidth = 0;
-                lineHeight = childHeight + lp.topMargin + lp.bottomMargin;
-                lineViews = new ArrayList<View>();
-//                lineViews.add(child);
+                usedLineWidth = childWidth;
+                lineHeight = childHeight;
+                lineViews = new ArrayList<>();
+                lineViews.add(child);
             }
         }
 
@@ -231,17 +241,17 @@ public class FlowLayout extends ViewGroup {
     }
 
     @Override
-    public LayoutParams generateLayoutParams(AttributeSet attrs) {
+    public ViewGroup.LayoutParams generateLayoutParams(AttributeSet attrs) {
         return new MarginLayoutParams(getContext(), attrs);
     }
 
     @Override
-    protected LayoutParams generateDefaultLayoutParams() {
-        return new MarginLayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
+        return new MarginLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
     @Override
-    protected LayoutParams generateLayoutParams(LayoutParams p) {
+    protected ViewGroup.LayoutParams generateLayoutParams(ViewGroup.LayoutParams p) {
         return new MarginLayoutParams(p);
     }
 }

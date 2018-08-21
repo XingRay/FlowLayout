@@ -31,11 +31,16 @@ public abstract class BaseFlowAdapter<T> {
         notifyDataSetChanged();
     }
 
-    public void set(List<T> list) {
+    public void update(List<T> list) {
         mList.clear();
         if (list != null) {
             mList.addAll(list);
         }
+        notifyDataSetChanged();
+    }
+
+    public void clear() {
+        mList.clear();
         notifyDataSetChanged();
     }
 
